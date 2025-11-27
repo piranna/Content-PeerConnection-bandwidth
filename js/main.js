@@ -105,12 +105,14 @@ function call() {
   pc2.onicecandidate = onIceCandidate.bind(pc2);
   pc2.ontrack = gotRemoteStream;
 
+  const video = {frameRate: 30, width: 640, height: 480};
+
   if (synthetic.checked) {
     console.log('Requesting synthetic local stream');
-    gotStream(syntheticVideoStream());
+    gotStream(syntheticVideoStream(video));
   } else {
     console.log('Requesting live local stream');
-    navigator.mediaDevices.getUserMedia({video: true})
+    navigator.mediaDevices.getUserMedia({video})
         .then(gotStream)
         .catch(e => alert('getUserMedia() error: ' + e.name));
   }
@@ -320,12 +322,12 @@ function triangle(number, maxValue) {
   return Math.abs(number % modulus - maxValue);
 }
 
-function syntheticVideoStream({width = 640, height = 480, signal} = {}) {
+function syntheticVideoStream({frameRate, width = 640, height = 480, signal} = {}) {
   const canvas = Object.assign(
       document.createElement('canvas'), {width, height}
   );
   const ctx = canvas.getContext('2d');
-  const stream = canvas.captureStream();
+  const stream = canvas.captureStream(frameRate);
 
   let count = 0;
   setInterval(() => {
