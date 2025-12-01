@@ -14,6 +14,9 @@ const localVideo = document.querySelector('video#localVideo');
 const callButton = document.querySelector('button#callButton');
 const hangupButton = document.querySelector('button#hangupButton');
 const bandwidthSelector = document.querySelector('select#bandwidth');
+const width = document.querySelector('input#width');
+const height = document.querySelector('input#height');
+const frameRate = document.querySelector('input#frameRate');
 const synthetic = document.querySelector('input#synthetic');
 hangupButton.disabled = true;
 callButton.onclick = call;
@@ -105,7 +108,9 @@ function call() {
   pc2.onicecandidate = onIceCandidate.bind(pc2);
   pc2.ontrack = gotRemoteStream;
 
-  const video = {frameRate: 30, width: 640, height: 480};
+  const video = {
+    frameRate: frameRate.value, width: width.value, height: height.value
+  };
 
   if (synthetic.checked) {
     console.log('Requesting synthetic local stream');
@@ -278,38 +283,46 @@ window.setInterval(() => {
   }
   sender.getStats().then(res => {
     res.forEach(report => {
-      let bytes;
-      let headerBytes;
-      let packets;
-      if (report.type === 'outbound-rtp') {
-        if (report.isRemote) {
-          return;
-        }
-        const now = report.timestamp;
-        bytes = report.bytesSent;
-        headerBytes = report.headerBytesSent;
-
-        packets = report.packetsSent;
-        if (lastResult && lastResult.has(report.id)) {
-          // calculate bitrate
-          const bitrate = 8 * (bytes - lastResult.get(report.id).bytesSent) /
-            (now - lastResult.get(report.id).timestamp);
-          const headerrate = 8 * (headerBytes - lastResult.get(report.id).headerBytesSent) /
-            (now - lastResult.get(report.id).timestamp);
-
-          // append to chart
-          bitrateSeries.addPoint(now, bitrate);
-          headerrateSeries.addPoint(now, headerrate);
-          bitrateGraph.setDataSeries([bitrateSeries, headerrateSeries]);
-          bitrateGraph.updateEndDate();
-
-          // calculate number of packets and append to chart
-          packetSeries.addPoint(now, packets -
-            lastResult.get(report.id).packetsSent);
-          packetGraph.setDataSeries([packetSeries]);
-          packetGraph.updateEndDate();
-        }
+      if (report.isRemote) {
+        return;
       }
+
+      if (report.type !== 'outbound-rtp') {
+        return;
+      }
+
+      const previousReport = lastResult?.get(report.id)
+      if (!previousReport) {
+        return;
+      }
+
+      const now = report.timestamp;
+      const bytesSent = report.bytesSent;
+      const headerBytes = report.headerBytesSent;
+      const packets = report.packetsSent;
+
+      // calculate bitrate
+      const bitrate = 8 * (bytesSent - previousReport.bytesSent) /
+        (now - previousReport.timestamp) * 1000;
+      const headerrate = 8 * (headerBytes - previousReport.headerBytesSent) /
+        (now - previousReport.timestamp) * 1000;
+
+      // append to chart
+      bitrateSeries.addPoint(now, bitrate);
+      headerrateSeries.addPoint(now, headerrate);
+      bitrateGraph.setDataSeries([bitrateSeries, headerrateSeries]);
+      bitrateGraph.updateEndDate();
+
+      // calculate number of packets and append to chart
+      const packetsPerSecond = packets - previousReport.packetsSent;
+
+      packetSeries.addPoint(now, packetsPerSecond);
+      packetGraph.setDataSeries([packetSeries]);
+      packetGraph.updateEndDate();
+
+      // update text values
+      document.getElementById('bitrateValue').innerText = Math.ceil(bitrate);
+      document.getElementById('packetValue').innerText = packetsPerSecond;
     });
     lastResult = res;
   });
