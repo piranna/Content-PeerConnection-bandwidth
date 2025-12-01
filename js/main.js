@@ -18,6 +18,7 @@ const width = document.querySelector('input#width');
 const height = document.querySelector('input#height');
 const frameRate = document.querySelector('input#frameRate');
 const synthetic = document.querySelector('input#synthetic');
+
 hangupButton.disabled = true;
 callButton.onclick = call;
 hangupButton.onclick = hangup;
@@ -277,10 +278,12 @@ window.setInterval(() => {
   if (!pc1) {
     return;
   }
+
   const sender = pc1.getSenders()[0];
   if (!sender) {
     return;
   }
+
   sender.getStats().then(res => {
     res.forEach(report => {
       if (report.isRemote) {
@@ -324,6 +327,7 @@ window.setInterval(() => {
       document.getElementById('bitrateValue').innerText = Math.ceil(bitrate);
       document.getElementById('packetValue').innerText = packetsPerSecond;
     });
+
     lastResult = res;
   });
 }, 1000);
@@ -352,6 +356,7 @@ function syntheticVideoStream({frameRate, width = 640, height = 480, signal} = {
     count += 1;
     const boxSize=80;
     ctx.fillRect(0, 0, width, height);
+
     // Add some bouncing boxes in contrast color to add a little more noise.
     const rContrast = (r + 128)%256;
     const gContrast = (g + 128)%256;
@@ -363,6 +368,7 @@ function syntheticVideoStream({frameRate, width = 640, height = 480, signal} = {
     const xpos2 = triangle(count*11, width - boxSize);
     const ypos2 = triangle(count*13, height - boxSize);
     ctx.fillRect(xpos2, ypos2, boxSize, boxSize);
+
     // If signal is set (0-255), add a constant-color box of that luminance to
     // the video frame at coordinates 20 to 60 in both X and Y direction.
     // (big enough to avoid color bleed from surrounding video in some codecs,
