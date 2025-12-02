@@ -38,24 +38,31 @@
     <video id="localVideo" playsinline autoplay muted></video>
     <video id="remoteVideo" playsinline autoplay></video>
 
-    <div>
-        <label>Codec:</label>
-        <select id="codecSelector">
-            <option value="">Loading codecs...</option>
-        </select>
-        <br />
+    <fieldset id="settingsFieldset">
+        <legend>Call Settings</legend>
 
-        <label>Resolution:</label>
-        <input type="number" id="width" value="640" /> x
-        <input type="number" id="height" value="480" />
-        <br />
+        <div>
+            <label>Codec:</label>
+            <select id="codecSelector">
+                <option value="">Loading codecs...</option>
+            </select>
+        </div>
 
-        <label>Framerate:</label>
-        <input type="number" id="frameRate" value="30" min="1" max="60" />
-        <br />
+        <div>
+            <label>Resolution:</label>
+            <input type="number" id="width" value="640" /> x
+            <input type="number" id="height" value="480" />
+        </div>
 
-        Use synthetic video: <input type="checkbox" id="synthetic" />
-    </div>
+        <div>
+            <label>Framerate:</label>
+            <input type="number" id="frameRate" value="30" min="1" max="60" />
+        </div>
+
+        <div>
+            Use synthetic video: <input type="checkbox" id="synthetic" />
+            </div>
+    </fieldset>
 
     <div>
         <button id="callButton">Call</button>
@@ -83,6 +90,12 @@
         <div>Packets sent per second: <span id="packetValue"></span></div>
         <canvas id="packetCanvas"></canvas>
     </div>
+<div id="csvRow" style="margin-top:12px;font-family:monospace">
+    CSV:
+    <code id="csvLine">
+            codec,width,height,framerate,max_bps,avg_bps,max_packets,avg_packets
+        </code>
+</div>
 </div>
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>

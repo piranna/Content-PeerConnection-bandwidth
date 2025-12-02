@@ -15,6 +15,7 @@ const callButton = document.querySelector('button#callButton');
 const hangupButton = document.querySelector('button#hangupButton');
 const bandwidthSelector = document.querySelector('select#bandwidth');
 const codecSelector = document.querySelector('select#codecSelector');
+const settingsFieldset = document.querySelector('fieldset#settingsFieldset');
 const width = document.querySelector('input#width');
 const height = document.querySelector('input#height');
 const frameRate = document.querySelector('input#frameRate');
@@ -26,6 +27,27 @@ hangupButton.onclick = hangup;
 
 let availableCodecs = [];
 let selectedCodec = null;
+let negotiatedCodecName = '';
+
+let bitrateMax = 0;
+let bitrateSum = 0;
+let bitrateSamples = 0;
+
+let ppsMax = 0;
+let ppsSum = 0;
+
+function resetMetrics() {
+  bitrateMax = 0;
+  bitrateSum = 0;
+  bitrateSamples = 0;
+  ppsMax = 0;
+  ppsSum = 0;
+  negotiatedCodecName = '';
+  const csvEl = document.getElementById('csvLine');
+  if (csvEl) {
+    csvEl.textContent = 'codec,width,height,framerate,max_bps,avg_bps,max_packets,avg_packets';
+  }
+}
 
 let pc1;
 let pc2;
@@ -82,9 +104,12 @@ async function getAvailableCodecs() {
     return;
   }
 
-  availableCodecs = capabilities.codecs.filter(codec =>
-    codec.mimeType.startsWith('video/')
-  );
+  availableCodecs = capabilities.codecs.filter(codec => {
+    if (!codec.mimeType.startsWith('video/')) return false;
+    const codecName = codec.mimeType.split('/')[1].toLowerCase();
+    // Filter out RTX, RED, and FEC (not real video codecs)
+    return codecName !== 'rtx' && codecName !== 'red' && codecName !== 'ulpfec' && codecName !== 'flexfec';
+  });
 
   codecSelector.innerHTML = '';
   availableCodecs.forEach((codec, index) => {
@@ -147,8 +172,10 @@ function onCreateSessionDescriptionError(error) {
 
 function call() {
   callButton.disabled = true;
+  settingsFieldset.disabled = true;
   bandwidthSelector.disabled = false;
   console.log('Starting call');
+  resetMetrics();
   const servers = null;
   pc1 = new RTCPeerConnection(servers);
   console.log('Created local peer connection object pc1');
@@ -220,6 +247,7 @@ function hangup() {
   pc2 = null;
   hangupButton.disabled = true;
   callButton.disabled = false;
+  settingsFieldset.disabled = false;
   bandwidthSelector.disabled = true;
 }
 
@@ -398,6 +426,7 @@ function verifyNegotiatedCodec() {
       throw new Error(errorMsg);
     }
 
+    negotiatedCodecName = (negotiatedCodec.mimeType.split('/')[1] || '').toUpperCase();
     console.log(`✓ Codec ${negotiatedCodec.mimeType} successfully negotiated (only codec)`);
   } else {
     console.warn('No codec information available in sender parameters');
@@ -457,11 +486,65 @@ window.setInterval(() => {
       // update text values
       document.getElementById('bitrateValue').innerText = Math.ceil(bitrate);
       document.getElementById('packetValue').innerText = packetsPerSecond;
+
+      // accumulators for CSV
+      bitrateMax = Math.max(bitrateMax, bitrate);
+      bitrateSum += bitrate;
+      bitrateSamples += 1;
+      ppsMax = Math.max(ppsMax, packetsPerSecond);
+      ppsSum += packetsPerSecond;
+
+      updateCsvRow();
     });
 
     lastResult = res;
   });
 }, 1000);
+
+function updateCsvRow() {
+  const csvEl = document.getElementById('csvLine');
+  if (!csvEl) return;
+
+  // Determine codec name
+  let codecName = negotiatedCodecName;
+  if (!codecName && selectedCodec) {
+    codecName = (selectedCodec.mimeType.split('/')[1] || '').toUpperCase();
+  }
+
+  // Determine current settings
+  let w = Number(width.value) || 0;
+  let h = Number(height.value) || 0;
+  let fps = Number(frameRate.value) || '';
+  try {
+    const s = pc1 && pc1.getSenders && pc1.getSenders()[0];
+    const settings = s && s.track && s.track.getSettings ? s.track.getSettings() : {};
+    if (settings) {
+      w = settings.width || w || localVideo.videoWidth || 0;
+      h = settings.height || h || localVideo.videoHeight || 0;
+      if (settings.frameRate) fps = Math.round(settings.frameRate);
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const avgBitrate = bitrateSamples ? Math.round(bitrateSum / bitrateSamples) : '';
+  const maxBitrate = bitrateMax ? Math.round(bitrateMax) : '';
+  const avgPps = bitrateSamples ? Math.round(ppsSum / bitrateSamples) : '';
+  const maxPps = ppsMax ? Math.round(ppsMax) : '';
+
+  const row = [
+    codecName || '',
+    w || '',
+    h || '',
+    fps || '',
+    maxBitrate || '',
+    avgBitrate || '',
+    maxPps || '',
+    avgPps || ''
+  ].join(',');
+
+  csvEl.textContent = row;
+}
 
 // Return a number between 0 and maxValue based on the input number,
 // so that the output changes smoothly up and down.
