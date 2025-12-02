@@ -1,0 +1,14 @@
+{
+  "name": "Content-peerconnection-bandwidth",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "plot": "scripts/plot_bitrate.js",
+    "start": "serve"
+  },
+  "dependencies": {
+    "csv-parse": "^6.1.0",
+    "serve": "^14.2.5"
+  }
+}
