@@ -14,6 +14,7 @@ const localVideo = document.querySelector('video#localVideo');
 const callButton = document.querySelector('button#callButton');
 const hangupButton = document.querySelector('button#hangupButton');
 const bandwidthSelector = document.querySelector('select#bandwidth');
+const codecSelector = document.querySelector('select#codecSelector');
 const width = document.querySelector('input#width');
 const height = document.querySelector('input#height');
 const frameRate = document.querySelector('input#frameRate');
@@ -22,6 +23,9 @@ const synthetic = document.querySelector('input#synthetic');
 hangupButton.disabled = true;
 callButton.onclick = call;
 hangupButton.onclick = hangup;
+
+let availableCodecs = [];
+let selectedCodec = null;
 
 let pc1;
 let pc2;
@@ -63,6 +67,47 @@ remoteVideo.addEventListener('resize', ev => {
   }
 });
 
+// Get available video codecs and populate selector
+async function getAvailableCodecs() {
+  const pc = new RTCPeerConnection();
+  pc.addTransceiver('video');
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  const capabilities = RTCRtpSender.getCapabilities('video');
+  if (!capabilities) {
+    console.error('RTCRtpSender.getCapabilities not supported');
+    codecSelector.innerHTML = '<option value="">No codecs available</option>';
+    pc.close();
+    return;
+  }
+
+  availableCodecs = capabilities.codecs.filter(codec =>
+    codec.mimeType.startsWith('video/')
+  );
+
+  codecSelector.innerHTML = '';
+  availableCodecs.forEach((codec, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    const codecName = codec.mimeType.split('/')[1];
+    const sdpFmtpLine = codec.sdpFmtpLine || '';
+    option.text = `${codecName}${sdpFmtpLine ? ' (' + sdpFmtpLine + ')' : ''}`;
+    codecSelector.appendChild(option);
+  });
+
+  pc.close();
+  console.log('Available codecs:', availableCodecs);
+}
+
+codecSelector.onchange = () => {
+  selectedCodec = availableCodecs[codecSelector.value];
+  console.log('Selected codec:', selectedCodec);
+};
+
+// Initialize codec list on page load
+getAvailableCodecs();
+
 
 function gotStream(stream) {
   hangupButton.disabled = false;
@@ -71,6 +116,11 @@ function gotStream(stream) {
   localVideo.srcObject = stream;
   localStream.getTracks().forEach(track => pc1.addTrack(track, localStream));
   console.log('Adding Local Stream to peer connection');
+
+  // Set codec preferences before creating offer if a codec is selected
+  if (selectedCodec) {
+    setCodecPreferences();
+  }
 
   pc1.createOffer(
       offerOptions
@@ -126,6 +176,7 @@ function call() {
 
 function gotDescription1(desc) {
   console.log('Offer from pc1 \n' + desc.sdp);
+
   pc1.setLocalDescription(desc).then(
       () => {
         pc2.setRemoteDescription(desc)
@@ -139,6 +190,7 @@ function gotDescription2(desc) {
   pc2.setLocalDescription(desc).then(
       () => {
         console.log('Answer from pc2 \n' + desc.sdp);
+
         let p;
         if (maxBandwidth) {
           p = pc1.setRemoteDescription({
@@ -148,7 +200,12 @@ function gotDescription2(desc) {
         } else {
           p = pc1.setRemoteDescription(desc);
         }
-        p.then(() => {}, onSetSessionDescriptionError);
+        p.then(() => {
+          // Verify codec after negotiation if one was selected
+          if (selectedCodec) {
+            verifyNegotiatedCodec();
+          }
+        }, onSetSessionDescriptionError);
       },
       onSetSessionDescriptionError
   );
@@ -271,6 +328,80 @@ function updateBandwidthRestriction(sdp, bandwidth) {
 
 function removeBandwidthRestriction(sdp) {
   return sdp.replace(/b=AS:.*\r\n/, '').replace(/b=TIAS:.*\r\n/, '');
+}
+
+function setCodecPreferences() {
+  const transceivers = pc1.getTransceivers();
+  const videoTransceiver = transceivers.find(t => t.sender.track?.kind === 'video');
+
+  if (!videoTransceiver) {
+    const errorMsg = 'ERROR: No video transceiver found';
+    console.error(errorMsg);
+    alert(errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  if (typeof videoTransceiver.setCodecPreferences === 'function') {
+    // Modern API: use setCodecPreferences with only the selected codec
+    const codecName = selectedCodec.mimeType.split('/')[1];
+    console.log(`Setting codec preference to ${codecName}`);
+
+    try {
+      videoTransceiver.setCodecPreferences([selectedCodec]);
+      console.log(`✓ Codec preference set to ${selectedCodec.mimeType}`);
+    } catch (e) {
+      const errorMsg = `ERROR: Failed to set codec preference: ${e.message}`;
+      console.error(errorMsg);
+      alert(errorMsg);
+      throw e;
+    }
+  } else {
+    const errorMsg = 'ERROR: setCodecPreferences API not supported in this browser';
+    console.error(errorMsg);
+    alert(errorMsg);
+    throw new Error(errorMsg);
+  }
+}
+
+function verifyNegotiatedCodec() {
+  const transceivers = pc1.getTransceivers();
+  const videoTransceiver = transceivers.find(t => t.sender.track?.kind === 'video');
+
+  if (!videoTransceiver) {
+    console.error('No video transceiver found for verification');
+    return;
+  }
+
+  const params = videoTransceiver.sender.getParameters();
+  if (params.codecs && params.codecs.length > 0) {
+    const negotiatedCodec = params.codecs[0];
+    const selectedMimeType = selectedCodec.mimeType.toLowerCase();
+    const negotiatedMimeType = negotiatedCodec.mimeType.toLowerCase();
+
+    console.log('Negotiated codec:', negotiatedCodec);
+    console.log('Selected codec:', selectedCodec);
+
+    if (negotiatedMimeType !== selectedMimeType) {
+      const errorMsg = `ERROR: Codec mismatch! Expected ${selectedCodec.mimeType} but got ${negotiatedCodec.mimeType}`;
+      console.error(errorMsg);
+      alert(errorMsg);
+      hangup();
+      throw new Error(errorMsg);
+    }
+
+    // Check if there are fallback codecs (there should be only one)
+    if (params.codecs.length > 1) {
+      const errorMsg = `ERROR: Multiple codecs negotiated (${params.codecs.length}). Expected only ${selectedCodec.mimeType}.`;
+      console.error(errorMsg);
+      alert(errorMsg);
+      hangup();
+      throw new Error(errorMsg);
+    }
+
+    console.log(`✓ Codec ${negotiatedCodec.mimeType} successfully negotiated (only codec)`);
+  } else {
+    console.warn('No codec information available in sender parameters');
+  }
 }
 
 // query getStats every second
