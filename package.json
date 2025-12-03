@@ -1,7 +1,7 @@
 {
   "name": "Content-peerconnection-bandwidth",
   "version": "0.0.0",
-  "description": "",
+  "description": "WebRTC bandwidth testing with echo functionality",
   "type": "module",
   "scripts": {
     "plot": "scripts/plot_bitrate.js",

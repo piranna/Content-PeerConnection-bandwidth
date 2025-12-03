@@ -14,7 +14,8 @@ try {
   records = parse(csvContent, {
     columns: true,
     skip_empty_lines: true,
-    cast: true
+    cast: true,
+    comment: '#'
   });
 } catch (err) {
   console.error('Error: No se encontró el archivo stats.csv');
