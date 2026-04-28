@@ -5,18 +5,18 @@
  * color (solid line for avg, dashed line for max).
  */
 
-import { readFileSync, writeFileSync } from 'fs';
-import { parse } from 'csv-parse/sync';
+import { readFileSync, writeFileSync } from "fs";
+import { parse } from "csv-parse/sync";
 
 // Read and parse CSV
 let records;
 try {
-  const csvContent = readFileSync('stats.csv', 'utf-8');
+  const csvContent = readFileSync("stats.csv", "utf-8");
   records = parse(csvContent, {
     columns: true,
     skip_empty_lines: true,
     cast: true,
-    comment: '#'
+    comment: "#",
   });
 } catch (err) {
   console.error("Error: Could not find stats.csv");
@@ -24,27 +24,35 @@ try {
 }
 
 // Filter valid records
-records = records.filter(r => r.codec && r.width && r.height && r.avg_bps);
+records = records.filter((r) => r.codec && r.width && r.height && r.avg_bps);
 
 // Create resolution labels and sort by pixel count
-records.forEach(r => {
+records.forEach((r) => {
   r.resolution = `${r.width}x${r.height}`;
   r.total_pixels = r.width * r.height;
 });
 
 // Group by codec
-const codecs = [...new Set(records.map(r => r.codec))];
+const codecs = [...new Set(records.map((r) => r.codec))];
 const colors = [
-  '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+  "#1f77b4",
+  "#ff7f0e",
+  "#2ca02c",
+  "#d62728",
+  "#9467bd",
+  "#8c564b",
+  "#e377c2",
+  "#7f7f7f",
+  "#bcbd22",
+  "#17becf",
 ];
 
 // Get all unique resolutions in order
-const allResolutions = [...new Set(records.map(r => r.resolution))];
+const allResolutions = [...new Set(records.map((r) => r.resolution))];
 const sortedResolutions = allResolutions.sort((a, b) => {
-  const [w1, h1] = a.split('x').map(Number);
-  const [w2, h2] = b.split('x').map(Number);
-  return (w1 * h1) - (w2 * h2);
+  const [w1, h1] = a.split("x").map(Number);
+  const [w2, h2] = b.split("x").map(Number);
+  return w1 * h1 - w2 * h2;
 });
 
 // Prepare datasets
@@ -52,43 +60,47 @@ const datasets = [];
 
 codecs.forEach((codec, idx) => {
   const codecData = records
-    .filter(r => r.codec === codec)
+    .filter((r) => r.codec === codec)
     .sort((a, b) => a.total_pixels - b.total_pixels);
 
   const color = colors[idx % colors.length];
 
   // Build resolution-to-values map
   const dataMap = {};
-  codecData.forEach(r => {
+  codecData.forEach((r) => {
     dataMap[r.resolution] = r;
   });
 
   // Dataset for avg_bps (solid line)
   datasets.push({
     label: `${codec} (avg)`,
-    data: sortedResolutions.map(res => dataMap[res] ? dataMap[res].avg_bps / 1_000 : null),
+    data: sortedResolutions.map((res) =>
+      dataMap[res] ? dataMap[res].avg_bps / 1_000 : null,
+    ),
     borderColor: color,
     backgroundColor: color,
     borderWidth: 2,
     pointRadius: 4,
     borderDash: [],
     fill: false,
-    spanGaps: true
+    spanGaps: true,
   });
 
   // Dataset for max_bps (dashed line)
-  if (codecData.some(r => r.max_bps)) {
+  if (codecData.some((r) => r.max_bps)) {
     datasets.push({
       label: `${codec} (max)`,
-      data: sortedResolutions.map(res => dataMap[res]?.max_bps ? dataMap[res].max_bps / 1_000 : null),
+      data: sortedResolutions.map((res) =>
+        dataMap[res]?.max_bps ? dataMap[res].max_bps / 1_000 : null,
+      ),
       borderColor: color,
       backgroundColor: color,
       borderWidth: 1.5,
       pointRadius: 3,
-      pointStyle: 'rect',
+      pointStyle: "rect",
       borderDash: [5, 5],
       fill: false,
-      spanGaps: true
+      spanGaps: true,
     });
   }
 });
@@ -188,7 +200,7 @@ const html = `<!DOCTYPE html>
 </body>
 </html>`;
 
-const outputFile = 'bitrate_chart.html';
+const outputFile = "bitrate_chart.html";
 writeFileSync(outputFile, html);
 
 console.log(`✓ Chart saved to: ${outputFile}`);
