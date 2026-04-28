@@ -30,9 +30,8 @@ Node.js plotting script.
 9. [Current dataset notes](#current-dataset-notes)
 10. [Methodology guidance (for reproducible results)](#methodology-guidance-for-reproducible-results)
 11. [Limitations and caveats](#limitations-and-caveats)
-12. [How this can become a blog post](#how-this-can-become-a-blog-post)
-13. [Possible next improvements](#possible-next-improvements)
-14. [License](#license)
+12. [Possible next improvements](#possible-next-improvements)
+13. [License](#license)
 
 ## What this project does
 
