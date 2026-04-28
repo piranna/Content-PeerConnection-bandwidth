@@ -17,6 +17,9 @@ extends it to:
 The project is intentionally simple: browser-native test harness + one small
 Node.js plotting script.
 
+Blog article:
+[WebRTC bitrate is not what you think](https://piranna.github.io/2026/04/28/WebRTC-bitrate-is-not-what-you-think/)
+
 ## Table of contents
 
 1. [What this project does](#what-this-project-does)
