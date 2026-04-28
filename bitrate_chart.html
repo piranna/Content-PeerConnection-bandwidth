@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bitrate by Resolution and Codec</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    #chartContainer {
+      position: relative;
+      height: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Average and Peak Bitrate by Resolution and Codec</h1>
+    <div id="chartContainer">
+      <canvas id="bitrateChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const ctx = document.getElementById('bitrateChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ["2x2","4x3","8x6","20x15","24x18","40x30","80x60","160x120","320x240","640x480"],
+        datasets: [{"label":"H264 (avg)","data":[null,null,null,null,0.857,2.733,5.015,27.761,105.132,202.628],"borderColor":"#1f77b4","backgroundColor":"#1f77b4","borderWidth":2,"pointRadius":4,"borderDash":[],"fill":false,"spanGaps":true},{"label":"H264 (max)","data":[null,null,null,null,4.736,10.883,25.477,77.523,305.539,542.482],"borderColor":"#1f77b4","backgroundColor":"#1f77b4","borderWidth":1.5,"pointRadius":3,"pointStyle":"rect","borderDash":[5,5],"fill":false,"spanGaps":true},{"label":"VP8 (avg)","data":[0.2,0.2,0.623,1,null,3,10,35,100,215.505],"borderColor":"#ff7f0e","backgroundColor":"#ff7f0e","borderWidth":2,"pointRadius":4,"borderDash":[],"fill":false,"spanGaps":true},{"label":"VP8 (max)","data":[0.5,0.8,23.28,30,null,8,25,80,250,560.125],"borderColor":"#ff7f0e","backgroundColor":"#ff7f0e","borderWidth":1.5,"pointRadius":3,"pointStyle":"rect","borderDash":[5,5],"fill":false,"spanGaps":true},{"label":"VP9 (avg)","data":[0.175,0.287,0.366,0.853,null,3.509,11.121,51.712,176.681,332.262],"borderColor":"#2ca02c","backgroundColor":"#2ca02c","borderWidth":2,"pointRadius":4,"borderDash":[],"fill":false,"spanGaps":true},{"label":"VP9 (max)","data":[0.616,1.192,1.176,2.744,null,11.857,28.24,115.525,362.843,938.107],"borderColor":"#2ca02c","backgroundColor":"#2ca02c","borderWidth":1.5,"pointRadius":3,"pointStyle":"rect","borderDash":[5,5],"fill":false,"spanGaps":true},{"label":"AV1 (avg)","data":[0.156,0.195,0.239,0.839,null,1.885,6.243,24.987,61.447,136.069],"borderColor":"#d62728","backgroundColor":"#d62728","borderWidth":2,"pointRadius":4,"borderDash":[],"fill":false,"spanGaps":true},{"label":"AV1 (max)","data":[0.464,0.536,0.736,2.389,null,4.249,15.755,51.7,192.433,467.494],"borderColor":"#d62728","backgroundColor":"#d62728","borderWidth":1.5,"pointRadius":3,"pointStyle":"rect","borderDash":[5,5],"fill":false,"spanGaps":true}]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'right',
+            labels: { font: { size: 11 } }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Resolution',
+              font: { size: 14 }
+            },
+            ticks: {
+              autoSkip: false,
+              maxRotation: 45,
+              minRotation: 45
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Bitrate (kbps)',
+              font: { size: 14 }
+            },
+            beginAtZero: true
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        }
+      }
+    });
+  </script>
+</body>
+</html>
