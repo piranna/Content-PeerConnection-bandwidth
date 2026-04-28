@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * Genera página HTML con gráfica interactiva de bitrate (avg y max) vs resolución agrupado por codec.
- * avg_bps y max_bps del mismo codec comparten color (línea sólida para avg, discontinua para max).
+ * Generates an HTML page with an interactive bitrate chart (avg and max) vs
+ * resolution grouped by codec. avg_bps and max_bps for the same codec share
+ * color (solid line for avg, dashed line for max).
  */
 
 import { readFileSync, writeFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
 
-// Leer y parsear CSV
+// Read and parse CSV
 let records;
 try {
   const csvContent = readFileSync('stats.csv', 'utf-8');
@@ -18,27 +19,27 @@ try {
     comment: '#'
   });
 } catch (err) {
-  console.error('Error: No se encontró el archivo stats.csv');
+  console.error("Error: Could not find stats.csv");
   process.exit(1);
 }
 
-// Filtrar registros válidos
+// Filter valid records
 records = records.filter(r => r.codec && r.width && r.height && r.avg_bps);
 
-// Crear etiquetas de resolución y ordenar por píxeles
+// Create resolution labels and sort by pixel count
 records.forEach(r => {
   r.resolution = `${r.width}x${r.height}`;
   r.total_pixels = r.width * r.height;
 });
 
-// Agrupar por codec
+// Group by codec
 const codecs = [...new Set(records.map(r => r.codec))];
 const colors = [
   '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
   '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
 ];
 
-// Obtener todas las resoluciones únicas en orden
+// Get all unique resolutions in order
 const allResolutions = [...new Set(records.map(r => r.resolution))];
 const sortedResolutions = allResolutions.sort((a, b) => {
   const [w1, h1] = a.split('x').map(Number);
@@ -46,7 +47,7 @@ const sortedResolutions = allResolutions.sort((a, b) => {
   return (w1 * h1) - (w2 * h2);
 });
 
-// Preparar datasets
+// Prepare datasets
 const datasets = [];
 
 codecs.forEach((codec, idx) => {
@@ -56,13 +57,13 @@ codecs.forEach((codec, idx) => {
 
   const color = colors[idx % colors.length];
 
-  // Crear mapa de resolución a valores
+  // Build resolution-to-values map
   const dataMap = {};
   codecData.forEach(r => {
     dataMap[r.resolution] = r;
   });
 
-  // Dataset para avg_bps (línea sólida)
+  // Dataset for avg_bps (solid line)
   datasets.push({
     label: `${codec} (avg)`,
     data: sortedResolutions.map(res => dataMap[res] ? dataMap[res].avg_bps / 1_000 : null),
@@ -75,7 +76,7 @@ codecs.forEach((codec, idx) => {
     spanGaps: true
   });
 
-  // Dataset para max_bps (línea discontinua)
+  // Dataset for max_bps (dashed line)
   if (codecData.some(r => r.max_bps)) {
     datasets.push({
       label: `${codec} (max)`,
@@ -92,13 +93,13 @@ codecs.forEach((codec, idx) => {
   }
 });
 
-// Generar HTML
+// Generate HTML
 const html = `<!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bitrate por Resolución y Codec</title>
+  <title>Bitrate by Resolution and Codec</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     body {
@@ -126,7 +127,7 @@ const html = `<!DOCTYPE html>
 </head>
 <body>
   <div class="container">
-    <h1>Bitrate promedio y máximo por resolución y codec</h1>
+    <h1>Average and Peak Bitrate by Resolution and Codec</h1>
     <div id="chartContainer">
       <canvas id="bitrateChart"></canvas>
     </div>
@@ -158,7 +159,7 @@ const html = `<!DOCTYPE html>
           x: {
             title: {
               display: true,
-              text: 'Resolución',
+              text: 'Resolution',
               font: { size: 14 }
             },
             ticks: {
@@ -190,5 +191,5 @@ const html = `<!DOCTYPE html>
 const outputFile = 'bitrate_chart.html';
 writeFileSync(outputFile, html);
 
-console.log(`✓ Gráfica guardada en: ${outputFile}`);
-console.log('  Abre el archivo en tu navegador para ver la gráfica interactiva.');
+console.log(`✓ Chart saved to: ${outputFile}`);
+console.log("  Open this file in your browser to view the interactive chart.");
