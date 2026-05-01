@@ -17,7 +17,9 @@ extends it to:
 The project is intentionally simple: browser-native test harness + one small
 Node.js plotting script.
 
-Blog article:
+## Related Article
+
+For the full methodology, analysis and conclusions, see
 [WebRTC bitrate is not what you think](https://piranna.github.io/2026/04/28/WebRTC-bitrate-is-not-what-you-think/)
 
 ## Table of contents
@@ -332,14 +334,15 @@ If you want to evolve this benchmark:
 
 ## Citing
 
-If you use this project or its data in your work, please cite it as:
+If you reference this work, please cite the article:
 
 ```text
-Leganés-Combarro, Jesús (2025).
-"Content-PeerConnection-bandwidth: A WebRTC benchmarking sandbox for codec bitrate analysis."
-GitHub repository.
-https://github.com/piranna/Content-PeerConnection-bandwidth
+Leganés-Combarro, Jesús (2026).
+"WebRTC bitrate is not what you think"
+https://piranna.github.io/2026/04/28/WebRTC-bitrate-is-not-what-you-think/
 ```
+
+This repository contains the reference implementation used in the article.
 
 ## License
 
