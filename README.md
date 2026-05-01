@@ -2,6 +2,8 @@
 
 A WebRTC benchmarking sandbox for codec bitrate analysis.
 
+[![DOI](https://zenodo.org/badge/1107197673.svg)](https://doi.org/10.5281/zenodo.19961277)
+
 A practical WebRTC benchmarking sandbox to study how much bitrate is needed to
 send video at different codecs, resolutions, and frame rates.
 
