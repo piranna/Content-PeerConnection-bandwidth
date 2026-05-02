@@ -334,6 +334,10 @@ If you want to evolve this benchmark:
 - Add bitrate-vs-packets scatter and CDF plots.
 - Add CLI options to generate multiple chart types from one dataset.
 
+## Future work
+
+- Real-world network conditions and SFU scenarios
+
 ## Citing
 
 If you reference this work, please cite the article:
